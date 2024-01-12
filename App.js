@@ -1,12 +1,17 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
+import Navigation from './StackNavigator';
+import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
+import consoleOveride from "./consoleOverride/consoleOverride";
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
+    <>
+    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+      <Navigation /> 
       <StatusBar style="auto" />
-    </View>
+    </SafeAreaProvider>
+    </>
   );
 }
 
