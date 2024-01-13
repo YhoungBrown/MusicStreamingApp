@@ -1,13 +1,13 @@
-import React, { useEffect } from 'react';
-import { View, Text, SafeAreaView, Linking } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AntDesign, Entypo, MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Entypo, MaterialIcons, AntDesign } from '@expo/vector-icons';
+import * as WebBrowser from 'expo-web-browser';
+import React, { useEffect } from 'react';
+import { SafeAreaView, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Buttone from '../components/Buttone';
-//import * as WebBrowser from 'expo-web-browser';
-import { WebBrowser } from 'expo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
+import { generateRandom } from 'expo-auth-session/build/PKCE';
 
 const LoginScreen = () => {
     const navigation = useNavigation();
@@ -16,11 +16,10 @@ const LoginScreen = () => {
 
     useEffect(() => {
         const checkTokenValidity = async () => {
-            const accessToken = await AsyncStorage.getItem("token");
+           const accessToken = await AsyncStorage.getItem("token");
             const expirationDate = await AsyncStorage.getItem("expirationDate");
 
-            console.log("Access Token:", accessToken);
-            console.log("Expiration Date:", expirationDate);
+            
 
             if (accessToken && expirationDate) {
                 const currentTime = Date.now();
@@ -34,9 +33,8 @@ const LoginScreen = () => {
                 }
             }
         }
-
         checkTokenValidity();
-    }, []);
+    }, [navigation]);
 
     const authenticate = async () => {
         const config = {
@@ -51,42 +49,37 @@ const LoginScreen = () => {
             "playlist-read-collaborative",
             "playlist-modify-public"
           ],
+          state: generateRandom(16), //optional (just for extra security)...
           redirectUrl: "exp://192.168.43.92:8081/--/spotify-auth-callback"
         };
       
         const authUrl =
-          `${config.issuer}` +
+          `https://accounts.spotify.com/authorize` +
           `?response_type=token` +
           `&client_id=${config.clientId}` +
           `&scope=${encodeURIComponent(config.scopes.join(" "))}` +
-          `&redirect_uri=${encodeURIComponent(config.redirectUrl)}`;
+          `&redirect_uri=${encodeURIComponent(config.redirectUrl)}` +
+          `&state=${config.state}`;
       
-        // Open the Spotify authentication URL in the browser
-        const result = await WebBrowser.openAuthSessionAsync(authUrl, config.redirectUrl);
+          try {
+            const result = await WebBrowser.openAuthSessionAsync(authUrl, config.redirectUrl);
+
       
-        console.log("result: ", result);
-    
-        console.log("result URL: ", result.url);
+            if (result.type === 'success') {
+              const accessToken = result.url.split('access_token=')[1].split('&')[0];
+              const expirationDate = new Date().getTime() + 30000; // exp in 30sec. Assuming token expires in 1 hour (3600000)...
+              
 
-        
+              AsyncStorage.setItem('token', accessToken);
+              AsyncStorage.setItem('expirationDate', expirationDate.toString());
+              navigation.navigate('Main');
+            } else {
+              console.log('Authentication failed');
+            }
 
-        //WebBrowser.dismissBrowser();
-        // Extract the access token from the result URL
-        //const accessToken = result.url.split("access_token=")[1].split("&")[0];
-        let accessToken;
-        if (result.url) {
-            const tokenPart = result.url.split("access_token=")[1];
-            if (tokenPart) {
-                accessToken = tokenPart.split("&")[0];
-             }
-        }
-    
-        if (accessToken) {
-            const expirationDate = new Date().getTime() + 3600000; // Assuming token expires in 1 hour
-            AsyncStorage.setItem("token", accessToken);
-            AsyncStorage.setItem("expirationDate", expirationDate.toString());
-            navigation.navigate("Main");
-        }
+          } catch (error) {
+            console.error('Error during authentication:', error);
+          }
     };
     
     
