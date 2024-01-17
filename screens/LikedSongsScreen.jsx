@@ -1,11 +1,12 @@
 import { View, Text, ScrollView, TouchableOpacity, TextInput, FlatList, Image } from 'react-native'
-import React, { useEffect, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons, AntDesign, MaterialCommunityIcons, Entypo} from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SongItem from '../components/SongItem';
+import { Player } from '../PlayerContext';
 
 
 
@@ -16,6 +17,8 @@ const LikedSongsScreen = () => {
     const [input, setInput] = useState("");
     const [savedTracks, setSavedTracks] = useState([]);
     const [filteredTracks, setFilteredTracks] = useState([]);
+
+    const {currentTrack, SetCurrentTrack} = useContext(Player);
 
     const getSavedTracks = async () => {
         const accessToken = await AsyncStorage.getItem("token");
@@ -44,9 +47,10 @@ const LikedSongsScreen = () => {
     
     //console.log(savedTracks);
     //console.log(savedTracks?.track?.album?.images[0]?.url)
-    //console.log(savedTracks?.items[0]?.track?.album?.images[0]?.url);
+   // console.log(savedTracks?.items[0]?.track?.album?.images[0]?.url);
     //console.log(savedTracks?.items[0].track.album.name);
     //console.log(savedTracks?.items[0]?.track?.album?.artists[0]?.name)
+    //?.track?.album?.images[0]?.url
 
      const searchingSongs = (text) => {
         const lowercasedText = text.toLowerCase();
@@ -58,11 +62,20 @@ const LikedSongsScreen = () => {
         setFilteredTracks(filtered);
     }
 
-    // const playTrack = async() => {
-        
-    // }
+     const playTrack = async() => {
+        if(savedTracks.items.length > 0) {
+            SetCurrentTrack(savedTracks.items[0])
+        }
+
+        await play(savedTracks.items[0])
+     }
+
+     const play = async() => {
+
+     }
 
   return (
+    <>
     <LinearGradient colors={["#614385","#516395"]} style={{flex:1}}>
         <View style={[safeAreaTop, {flex: 1,}]}>
         {/* back Icon */}
@@ -162,7 +175,7 @@ const LikedSongsScreen = () => {
                     <MaterialCommunityIcons name="cross-bolnisi" size={24} color="#1D8954" />
 
                     <TouchableOpacity
-                    //onPress={playTrack}
+                    onPress={playTrack}
                      style={{
                         width: 60, 
                         height: 60,
@@ -185,6 +198,7 @@ const LikedSongsScreen = () => {
                         renderItem={({ item }) => (
                             <SongItem item={item}/>
                         )}
+                        ListFooterComponent={ currentTrack && (<View  style={{marginBottom: 100}}/>)}
                      />
                 ) : (
             
@@ -193,6 +207,7 @@ const LikedSongsScreen = () => {
                     renderItem={({ item }) => (
                     <SongItem item={item}/>
                     )}
+                    ListFooterComponent={ currentTrack && (<View  style={{marginBottom: 100}}/>)}
                 />)
             ) : (
                 <View 
@@ -208,7 +223,65 @@ const LikedSongsScreen = () => {
             
         </View>
     </LinearGradient>
-  )
-}
+
+    {currentTrack && (
+        <View style={{justifyContent: 'center'}}>
+        <TouchableOpacity style={{
+            backgroundColor: "#1DB954",
+            width: "92%",
+            padding: 10,
+            marginLeft: 'auto',
+            marginRight: "auto",
+            marginBottom: 15,
+            position: 'absolute',
+            borderRadius: 6,
+            left: 16,
+            bottom: 10,
+            justifyContent: 'space-between',
+            flexDirection: 'row', 
+            alignItems: 'center',
+            gap: 10,
+            }}
+        >
+            <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 10,
+            }}>
+                <Image 
+                    style={{
+                        width: 40, height: 40
+                    }}
+                    source={{uri: currentTrack?.track?.album?.images[0]?.url}}
+                /> 
+
+                <Text numberOfLines={1}
+                    style={{
+                        fontSize: 13,
+                        color: "white",
+                        fontWeight: 'bold',
+                        width: 220,
+                    }}
+                >
+                    {currentTrack?.track?.name} . {currentTrack.track.artists[0].name}
+                </Text>
+            </View>
+
+            <View style={{
+                flexDirection: 'row', 
+                alignItems: 'center',
+                gap: 5,
+            }}>
+                <AntDesign name="heart" size={24} color="#FFFFFF" />
+                <TouchableOpacity>
+                    <AntDesign name="pausecircle" size={24} color="white" />
+                </TouchableOpacity>
+            </View>
+        </TouchableOpacity>
+        </View>
+    )}
+</>
+  );
+};
 
 export default LikedSongsScreen

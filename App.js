@@ -3,14 +3,17 @@ import { StyleSheet, Text, View } from 'react-native';
 import Navigation from './StackNavigator';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 import consoleOveride from "./consoleOverride/consoleOverride";
+import { PlayerContext } from './PlayerContext';
 
 export default function App() {
   return (
     <>
-    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-      <Navigation /> 
-      <StatusBar style="auto" />
-    </SafeAreaProvider>
+    <PlayerContext>
+      <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+        <Navigation /> 
+        <StatusBar style="auto" />
+      </SafeAreaProvider>
+    </PlayerContext>
     </>
   );
 }
