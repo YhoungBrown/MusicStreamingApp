@@ -68,6 +68,8 @@ const LoginScreen = () => {
             if (result.type === 'success') {
               const accessToken = result.url.split('access_token=')[1].split('&')[0];
               const expirationDate = new Date().getTime() + 30000; // exp in 30sec. Assuming token expires in 1 hour (3600000)...
+              //console.log("accessTokinBelow")
+              //console.log(accessToken)
               
 
               AsyncStorage.setItem('token', accessToken);
