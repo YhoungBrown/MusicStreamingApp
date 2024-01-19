@@ -1,12 +1,14 @@
-import { View, Text, ScrollView, TouchableOpacity, TextInput, FlatList, Image } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, TextInput, FlatList, Image, StyleSheet } from 'react-native'
 import React, { useContext, useEffect, useState } from 'react'
 import { LinearGradient } from 'expo-linear-gradient'
-import { Ionicons, AntDesign, MaterialCommunityIcons, Entypo} from '@expo/vector-icons';
+import { Ionicons, AntDesign, MaterialCommunityIcons, Entypo, FontAwesome, Feather} from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SongItem from '../components/SongItem';
 import { Player } from '../PlayerContext';
+import { BottomModal, ModalContent } from 'react-native-modals';
+import { Audio } from 'expo-av';
 
 
 
@@ -17,6 +19,13 @@ const LikedSongsScreen = () => {
     const [input, setInput] = useState("");
     const [savedTracks, setSavedTracks] = useState([]);
     const [filteredTracks, setFilteredTracks] = useState([]);
+    const [modalVisible, setModalVisible] = useState(false);
+    const [currentSound, setCurrentSound] = useState(null);
+    const [progress, setProgress] = useState(null);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [totalDuration, setTotalDuration] = useState(0);
+    const [isPlaying, setIsPlaying] = useState(false);
+
 
     const {currentTrack, SetCurrentTrack} = useContext(Player);
 
@@ -70,14 +79,84 @@ const LikedSongsScreen = () => {
         await play(savedTracks.items[0])
      }
 
-     const play = async() => {
+     const play = async(nextTrack) => {
+        console.log(nextTrack)
+        const preview_url = nextTrack?.track?.preview_url;
 
-     }
+        try{
+            await Audio.setAudioModeAsync({
+                //custom required options below
+                playsInSilentModeIOS: true,
+                staysActiveInBackground: false,
+                shouldDuckAndroid: false,
+            })
+
+            const {sound, status} = await Audio.Sound.createAsync(
+                {
+                    uri: preview_url
+                },
+                {
+                    shouldPlay: true, isLooping: false
+                },
+                onPlaybackStatusUpdate,
+            ) 
+            onPlaybackStatusUpdate(status)
+            setCurrentSound(sound);
+            //console.log(`sound ${status}`)
+            setIsPlaying(status.isLoaded)
+            await sound.playAsync();
+        } catch(err) {
+            console.log(err.message)
+        }
+
+     };
+
+     const onPlaybackStatusUpdate = async (status) => {
+        console.log(status)
+        if(status.isLoaded && status.isPlaying) {
+            const progress = status.positionMillis / status.durationMillis;
+            console.log(`progress ${progress}`)
+            setProgress(progress);
+            setCurrentTime(status.positionMillis);
+            setTotalDuration(status.durationMillis);
+        }
+     };
+
+     const circleSize = 12;
+
+     const formatTime = (time) => {
+        const minutes = Math.floor(time / 60000);
+        const seconds = Math.floor((time % 60000) / 1000);
+
+        return `${minutes} : ${seconds < 10 ? "0" : ""} ${seconds}`
+     };
+
+    //  const handlePlayPause = async() => {
+    //     if (currentSound){
+    //         if(isPlaying) {
+    //             await currentSound.pauseAsync();
+    //         } else {
+    //             await currentSound.playAsync()
+    //         }
+    //         setIsPlaying(!isPlaying)
+    //     }
+    //  }
+
+    const handlePlayPause = async () => {
+        if (currentSound) {
+          if (isPlaying) {
+            await currentSound.pauseAsync();
+          } else {
+            await currentSound.playAsync();
+          }
+          setIsPlaying(!isPlaying);
+        }
+      };
 
   return (
     <>
     <LinearGradient colors={["#614385","#516395"]} style={{flex:1}}>
-        <View style={[safeAreaTop, {flex: 1,}]}>
+        <View style={[safeAreaTop, {flex: 1,}]} >
         {/* back Icon */}
             <TouchableOpacity 
                 style={{marginHorizontal: 10}} 
@@ -224,24 +303,30 @@ const LikedSongsScreen = () => {
         </View>
     </LinearGradient>
 
+    {/* song playing showUp while on Liked songs screen */}
+
     {currentTrack && (
-        <View style={{justifyContent: 'center'}}>
-        <TouchableOpacity style={{
-            backgroundColor: "#1DB954",
-            width: "92%",
-            padding: 10,
-            marginLeft: 'auto',
-            marginRight: "auto",
-            marginBottom: 15,
-            position: 'absolute',
-            borderRadius: 6,
-            left: 16,
-            bottom: 10,
-            justifyContent: 'space-between',
-            flexDirection: 'row', 
-            alignItems: 'center',
-            gap: 10,
+        
+        <TouchableOpacity
+            onPress={() => setModalVisible(!modalVisible)}
+            style={{
+                backgroundColor: "#1DB954",
+                width: "92%",
+                padding: 10,
+                marginLeft: 'auto',
+                marginRight: "auto",
+                marginBottom: 15,
+                position: 'absolute',
+                borderRadius: 6,
+                left: 16,
+                bottom: 10,
+                justifyContent: 'space-between',
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 10,
+                zIndex: 2, // Ensure that the modal button is above other components
             }}
+            pointerEvents="box-none" // Let touch events go through this view
         >
             <View style={{
                 flexDirection: 'row',
@@ -278,10 +363,194 @@ const LikedSongsScreen = () => {
                 </TouchableOpacity>
             </View>
         </TouchableOpacity>
-        </View>
+        
     )}
+
+    {/* song playing screen */}
+
+    <BottomModal 
+        visible={modalVisible} 
+        onHardwareBackPress={() =>  setModalVisible(false)}
+        swipeDirection={["up", "down"]}
+        swipeThreshold={200}
+    >
+        <ModalContent 
+            style={{
+                height: "100%", 
+                width: "100%",
+                backgroundColor: "#1DB954"
+            }}
+        >
+            <View style={[{
+                height: "100%",
+                width: "100%",
+            }, safeAreaTop]}>
+                <TouchableOpacity style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                }}>
+                    <AntDesign onPress={() => setModalVisible(!modalVisible)} name="down" size={24} color="white" />
+
+                    <Text 
+                        style={{
+                            fontSize: 14,
+                            fontWeight: 'bold',
+                            color: "white"
+                        }}
+                    >
+                    {currentTrack?.track?.name}
+                    </Text>
+
+
+                    <Entypo name="dots-three-vertical" size={24} color="white" />
+                </TouchableOpacity>
+
+                <View style={{height: 70}}/>
+                
+                <View style={{
+                    padding: 10
+                }}>
+                    <Image 
+                        style={{
+                            width: "100%",
+                            height: 330,
+                            borderRadius: 4
+                        }}
+                        source={{uri: currentTrack?.track?.album?.images[0]?.url}}
+                    />
+
+                    <View style={{
+                        marginTop: 20,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        }}
+                    >
+                        <View>
+                            <Text style={{
+                                fontSize: 18,
+                                fontWeight: 'bold',
+                                color: "white",
+                                }}
+                            >
+                                {currentTrack?.track?.name}
+                            </Text>
+                            <Text style={{
+                                color: "#D3D3D3",
+                                marginTop: 4
+                            }}>
+                                {currentTrack?.track?.artists[0]?.name}
+                            </Text>
+                        </View>
+
+                        <AntDesign name="heart" size={24} color="#FFFFFF" />
+                    </View>
+
+                    {/* progressBar section */}
+
+                    <View style={{
+                        marginTop: 10
+                    }}>
+                        <View style={{
+                            width: "100%",
+                            marginTop: 10,
+                            height: 3,
+                            backgroundColor: "gray",
+                            borderRadius: 5
+                        }}>
+                            <View style={[styles.progressBar, {width: `${progress * 100}%`}]}/>
+
+                            <View style={[
+                                {
+                                    position: 'absolute',
+                                    top: -5,
+                                    width: circleSize,
+                                    height: circleSize,
+                                    borderRadius: circleSize / 2,
+                                    backgroundColor: "white",
+                                },
+                                {
+                                    left: `${progress * 100}%`,
+                                    marginLeft: - circleSize / 2,
+                                }
+                                ]}
+                            />
+                        </View>
+
+                        <View style={{
+                            marginTop: 12,
+                            alignItems: "center",
+                            justifyContent: 'space-between',
+                            flexDirection: 'row',
+                        }}>
+                       {/* music start time and endTime */}
+                            <Text style={{
+                                color: "#D3D3D3",
+                                fontSize: 15
+                            }}>{formatTime(currentTime)}</Text>
+
+                            <Text style={{
+                                color: "#D3D3D3",
+                                fontSize: 15
+                            }}>{formatTime(totalDuration)}</Text>
+                        </View>
+                    </View>
+
+                    {/* controll Icons Section */}
+
+                    <View style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginTop: 17,
+                    }}>
+                        <TouchableOpacity>
+                            <FontAwesome name="arrows" size={30} color="white" />
+                        </TouchableOpacity>
+                        <TouchableOpacity>
+                            <Ionicons name="play-skip-back" size={30} color="white" />
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={handlePlayPause}>
+                            {isPlaying ? (
+                                <AntDesign name="pausecircle" size={60} color="white" />
+                            ) : (
+                                <TouchableOpacity
+                                    onPress={handlePlayPause}
+                                    style={{
+                                        width: 60,
+                                        height: 60,
+                                        borderRadius: 30,
+                                        backgroundColor: "white",
+                                        justifyContent: "center",
+                                        alignItems: "center",
+                                    }}
+                                >
+                                    <Entypo name="controller-play" size={26} color="black" />
+                                </TouchableOpacity>
+                            )}
+                        </TouchableOpacity>
+
+                        <TouchableOpacity>
+                            <Ionicons name="play-skip-forward" size={30} color="white" />
+                        </TouchableOpacity>
+                        <TouchableOpacity>
+                            <Feather name="repeat" size={30} color="white" />
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </View>
+        </ModalContent>
+    </BottomModal>
 </>
   );
 };
 
 export default LikedSongsScreen
+
+const styles = StyleSheet.create({
+    progressBar: {
+        height: "100%",
+        backgroundColor: "white",
+    }
+})

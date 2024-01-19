@@ -4,6 +4,7 @@ import Navigation from './StackNavigator';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 import consoleOveride from "./consoleOverride/consoleOverride";
 import { PlayerContext } from './PlayerContext';
+import { ModalPortal } from 'react-native-modals';
 
 export default function App() {
   return (
@@ -11,6 +12,7 @@ export default function App() {
     <PlayerContext>
       <SafeAreaProvider initialMetrics={initialWindowMetrics}>
         <Navigation /> 
+        <ModalPortal />
         <StatusBar style="auto" />
       </SafeAreaProvider>
     </PlayerContext>
