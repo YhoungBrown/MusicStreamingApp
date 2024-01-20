@@ -1,5 +1,5 @@
 import { View, Text, ScrollView, TouchableOpacity, TextInput, FlatList, Image, StyleSheet } from 'react-native'
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useContext, useEffect, useState, useRef} from 'react'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons, AntDesign, MaterialCommunityIcons, Entypo, FontAwesome, Feather} from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -25,6 +25,7 @@ const LikedSongsScreen = () => {
     const [currentTime, setCurrentTime] = useState(0);
     const [totalDuration, setTotalDuration] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
+    const value = useRef(0)
 
 
     const {currentTrack, SetCurrentTrack} = useContext(Player);
@@ -92,6 +93,9 @@ const LikedSongsScreen = () => {
         const preview_url = nextTrack?.track?.preview_url;
 
         try{
+            if (currentSound) {
+                await currentSound.stopAsync();
+            }
             await Audio.setAudioModeAsync({
                 //custom required options below
                 playsInSilentModeIOS: true,
@@ -128,9 +132,17 @@ const LikedSongsScreen = () => {
             setCurrentTime(status.positionMillis);
             setTotalDuration(status.durationMillis);
         }
+
+        //play next track as current track finishes "below"
+
+        if(status.didJustFinish === true) {
+            setCurrentSound(null);
+            playNextTrack();
+        }
      };
 
      const circleSize = 12;
+     const progressBarMovement = `${progress * 100}%`
 
      const formatTime = (time) => {
         const minutes = Math.floor(time / 60000);
@@ -139,16 +151,7 @@ const LikedSongsScreen = () => {
         return `${minutes} : ${seconds < 10 ? "0" : ""} ${seconds}`
      };
 
-    //  const handlePlayPause = async() => {
-    //     if (currentSound){
-    //         if(isPlaying) {
-    //             await currentSound.pauseAsync();
-    //         } else {
-    //             await currentSound.playAsync()
-    //         }
-    //         setIsPlaying(!isPlaying)
-    //     }
-    //  }
+
 
     const handlePlayPause = async () => {
         if (currentSound) {
@@ -160,6 +163,67 @@ const LikedSongsScreen = () => {
           setIsPlaying(!isPlaying);
         }
       };
+
+      const playNextTrack = async () => {
+        if (currentSound) {
+            await currentSound.stopAsync();
+            setCurrentSound(null);
+        }
+    
+        value.current += 1;
+    
+        if (value.current < savedTracks.items.length) {
+            const nextTrack = savedTracks.items[value.current];
+            if (nextTrack) {
+                SetCurrentTrack(nextTrack);
+                await play(nextTrack);
+            } else {
+                console.warn("Invalid track at index:", value.current);
+            }
+        } else {
+            //console.warn("End of playlist, restarting playlist");
+            alert("End of playlist, restarting playlist")
+            value.current = 0;
+            const nextTrack = savedTracks.items[value.current];
+            if (nextTrack) {
+                SetCurrentTrack(nextTrack);
+                await play(nextTrack);
+            } else {
+                console.warn("Invalid track at index:", value.current);
+            }
+        }
+    };
+
+    const playPrevTrack = async() => {
+        if (currentSound) {
+            await currentSound.stopAsync();
+            setCurrentSound(null);
+        }
+
+        value.current -= 1;
+
+        if (value.current < savedTracks.items.length) {
+            const nextTrack = savedTracks.items[value.current];
+            if (nextTrack) {
+                SetCurrentTrack(nextTrack);
+                await play(nextTrack);
+            } else {
+                console.warn("Invalid track at index:", value.current);
+            }
+        } else {
+            //console.warn("End of playlist, restarting playlist");
+            alert("No more Previous song")
+            value.current = 0;
+            const nextTrack = savedTracks.items[value.current];
+            if (nextTrack) {
+                SetCurrentTrack(nextTrack);
+                await play(nextTrack);
+            } else {
+                console.warn("Invalid track at index:", value.current);
+            }
+        }
+    }
+    
 
   return (
     <>
@@ -283,7 +347,11 @@ const LikedSongsScreen = () => {
                     <FlatList 
                         data={filteredTracks}
                         renderItem={({ item }) => (
-                            <SongItem item={item}/>
+                            <SongItem 
+                                item={item} 
+                                onPress={play}
+                                isPlaying = {item === currentTrack}
+                            />
                         )}
                         ListFooterComponent={ currentTrack && (<View  style={{marginBottom: 100}}/>)}
                      />
@@ -292,7 +360,11 @@ const LikedSongsScreen = () => {
                 <FlatList 
                     data={savedTracks?.items}
                     renderItem={({ item }) => (
-                    <SongItem item={item}/>
+                    <SongItem 
+                        item={item}
+                        onPress={play}
+                        isPlaying = {item === currentTrack}
+                    />
                     )}
                     ListFooterComponent={ currentTrack && (<View  style={{marginBottom: 100}}/>)}
                 />)
@@ -470,7 +542,7 @@ const LikedSongsScreen = () => {
                             backgroundColor: "gray",
                             borderRadius: 5
                         }}>
-                            <View style={[styles.progressBar, {width: `${progress * 100}%`}]}/>
+                            <View style={[styles.progressBar, {width: progressBarMovement}]}/>
 
                             <View style={[
                                 {
@@ -519,7 +591,7 @@ const LikedSongsScreen = () => {
                         <TouchableOpacity>
                             <FontAwesome name="arrows" size={30} color="white" />
                         </TouchableOpacity>
-                        <TouchableOpacity>
+                        <TouchableOpacity onPress={playPrevTrack}>
                             <Ionicons name="play-skip-back" size={30} color="white" />
                         </TouchableOpacity>
                         <TouchableOpacity onPress={handlePlayPause}>
@@ -542,7 +614,7 @@ const LikedSongsScreen = () => {
                             )}
                         </TouchableOpacity>
 
-                        <TouchableOpacity>
+                        <TouchableOpacity onPress={playNextTrack}>
                             <Ionicons name="play-skip-forward" size={30} color="white" />
                         </TouchableOpacity>
                         <TouchableOpacity>
