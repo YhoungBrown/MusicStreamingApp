@@ -50,7 +50,7 @@ const ProfileScreen = () => {
     getPlaylists();
   }, []);
 
-console.log(playlist);
+//console.log(playlist);
 
   return (
     <LinearGradient 
