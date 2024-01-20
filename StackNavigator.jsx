@@ -6,6 +6,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Entypo, AntDesign, Ionicons } from '@expo/vector-icons';
 import LoginScreen from './screens/LoginScreen';
 import LikedSongsScreen from './screens/LikedSongsScreen';
+import SongInfoScreen from './screens/SongInfoScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -68,6 +69,7 @@ function Navigation() {
           <Stack.Screen name="Login" component={LoginScreen} options={{headerShown: false}}/>
           <Stack.Screen name="Main" component={BottomTabs} options={{headerShown: false}}/>
           <Stack.Screen name="LikedSongs" component={LikedSongsScreen} options={{headerShown: false}}/>
+          <Stack.Screen name="SongInfo" component={SongInfoScreen} options={{headerShown: false}}/>
         </Stack.Navigator>
       </NavigationContainer> 
     );
