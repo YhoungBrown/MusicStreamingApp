@@ -47,7 +47,8 @@ const LoginScreen = () => {
             "user-top-read",
             "playlist-read-private",
             "playlist-read-collaborative",
-            "playlist-modify-public"
+            "playlist-modify-public",
+            "playlist-modify-private"
           ],
           state: generateRandom(16), //optional (just for extra security)...
           redirectUrl: "exp://192.168.43.92:8081/--/spotify-auth-callback"
@@ -69,7 +70,7 @@ const LoginScreen = () => {
               const accessToken = result.url.split('access_token=')[1].split('&')[0];
               const expirationDate = new Date().getTime() + 30000; // exp in 30sec. Assuming token expires in 1 hour (3600000)...
               //console.log("accessTokinBelow")
-              //console.log(accessToken)
+              console.log(accessToken)
               
 
               AsyncStorage.setItem('token', accessToken);
