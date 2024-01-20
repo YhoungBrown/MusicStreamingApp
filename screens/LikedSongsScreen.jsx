@@ -52,7 +52,15 @@ const LikedSongsScreen = () => {
     
     useEffect(() => {
         getSavedTracks();
-    }, [navigation])
+
+        return () => {
+            // Cleanup event listeners when the component unmounts
+            if (currentSound) {
+                currentSound.setOnPlaybackStatusUpdate(null);
+                currentSound.unloadAsync();
+            }
+        };
+    }, [navigation, currentSound])
     
     //console.log(savedTracks);
     //console.log(savedTracks?.track?.album?.images[0]?.url)
@@ -385,12 +393,14 @@ const LikedSongsScreen = () => {
                 height: "100%",
                 width: "100%",
             }, safeAreaTop]}>
-                <TouchableOpacity style={{
+                <View style={{
                     flexDirection: 'row',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                 }}>
-                    <AntDesign onPress={() => setModalVisible(!modalVisible)} name="down" size={24} color="white" />
+                    <TouchableOpacity onPress={() => setModalVisible(!modalVisible)}>
+                        <AntDesign name="down" size={24} color="white"/>
+                    </TouchableOpacity>
 
                     <Text 
                         style={{
@@ -402,9 +412,10 @@ const LikedSongsScreen = () => {
                     {currentTrack?.track?.name}
                     </Text>
 
-
-                    <Entypo name="dots-three-vertical" size={24} color="white" />
-                </TouchableOpacity>
+                    <TouchableOpacity>
+                        <Entypo name="dots-three-vertical" size={24} color="white" />
+                    </TouchableOpacity>
+                </View>
 
                 <View style={{height: 70}}/>
                 
