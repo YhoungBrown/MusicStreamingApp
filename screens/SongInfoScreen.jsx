@@ -170,6 +170,7 @@ console.log(tracks)
                                             fontWeight: "500",
                                             color: "gray", 
                                             }}
+                                            key={index}
                                         >
                                             {item?.name}
                                         </Text>

@@ -9,6 +9,7 @@ import SongItem from '../components/SongItem';
 import { Player } from '../PlayerContext';
 import { BottomModal, ModalContent } from 'react-native-modals';
 import { Audio } from 'expo-av';
+import { debounce } from 'lodash';
 
 
 
@@ -70,7 +71,7 @@ const LikedSongsScreen = () => {
     //console.log(savedTracks?.items[0]?.track?.album?.artists[0]?.name)
     //?.track?.album?.images[0]?.url
 
-     const searchingSongs = (text) => {
+    const searchingSongs = (text) => {
         const lowercasedText = text.toLowerCase();
         const filtered = savedTracks?.items.filter(item => {
             const trackName = item?.track?.name?.toLowerCase();
@@ -80,7 +81,13 @@ const LikedSongsScreen = () => {
         setFilteredTracks(filtered);
     }
 
-     const playTrack = async() => {
+    const debouncedSearch = debounce(searchingSongs, 800)
+    const handleSearch = (text) => {
+        //the essence of using debounce and not searhing the song straight is to improve performance. debounch search any written character after a certain set delay not immediately as they are written
+        debouncedSearch(text);
+    }
+
+    const playTrack = async() => {
         if(savedTracks.items.length > 0) {
             SetCurrentTrack(savedTracks.items[0])
         }
@@ -259,7 +266,7 @@ const LikedSongsScreen = () => {
                     <TextInput 
                         value={input} 
                         placeholder='Find Liked Songs'
-                        onChangeText={(text) => {setInput(text), searchingSongs(text)}}
+                        onChangeText={(text) => {setInput(text), handleSearch(text)}}
                         placeholderTextColor={"white"}
                         style={{fontWeight: "500", color: "white"}}
                     />
