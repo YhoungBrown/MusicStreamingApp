@@ -1,4 +1,4 @@
-import { View, Text, SafeAreaView, ScrollView, Image, TouchableOpacity, FlatList} from 'react-native'
+import { View, Text, SafeAreaView, ScrollView, Image, TouchableOpacity, FlatList, ActivityIndicator} from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -20,6 +20,7 @@ const HomeScreen = () => {
   const [userProfile, setUserProfile] = useState([]);
   const [recentlyPlayed, setRecentlyPlayed] = useState([]);
   const [topArtist, setTopArtist] = useState([]);
+  const [loading, setLoading] = useState(false);
 
 
   const greetingMessage = () => {
@@ -53,6 +54,7 @@ const HomeScreen = () => {
   //console.log(userProfile);
 
   const getRecentlyPlayedSongs = async () => {
+    setLoading(true);
     const accessToken = await AsyncStorage.getItem("token");
   
     try {
@@ -68,7 +70,9 @@ const HomeScreen = () => {
       const tracks = response.data.items;
 
       setRecentlyPlayed(tracks);
+      setLoading(false);
     } catch (error) {
+      setLoading(false);
       console.log("RecentlyPlayedErrorBelow")
       console.log(error.message);
     }
@@ -76,11 +80,13 @@ const HomeScreen = () => {
 
 
   const getTopItems = async() => {
+    setLoading(true)
     const accessToken = await AsyncStorage.getItem("token");
 
     try{
       if(!accessToken){
         console.log("Access Token not found");
+        setLoading(false);
         return;
       }
 
@@ -100,8 +106,9 @@ const HomeScreen = () => {
       const myTopArtists = response.data.artists.items;
       //console.log(response);
       setTopArtist(myTopArtists);
-
+      setLoading(false);
     } catch (error){
+      setLoading(false);
       console.log(error.message)
     }
   }
@@ -115,7 +122,7 @@ const HomeScreen = () => {
     getTopItems();
   }, []);
   
-  //console.log (recentlyPlayed)
+  //console.log (`recently played = ${recentlyPlayed}`)
   //console.log (topArtist);
 
   
@@ -193,7 +200,8 @@ const HomeScreen = () => {
       </Text>
       
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        {topArtist.length > 0 ? (
+        {!loading ? (
+          topArtist.length > 0 ? (
           topArtist?.map((item, index) => (
           <ArtistCard item={item} key={index}/>))
           ) : (
@@ -209,7 +217,18 @@ const HomeScreen = () => {
                   No top artist yet
                 </Text>
             )   
-        }
+        ) : (
+          <View style={{
+            flexDirection: 'row',
+            justifyContent: 'center', 
+            alignItems: 'center',
+            marginTop: 27,
+            paddingLeft: 175,
+            }}
+          >
+            <ActivityIndicator color={"white"} size={30}/>
+          </View>
+        )}
       </ScrollView>
 
       <View style={{height: 10}}/>
@@ -225,22 +244,34 @@ const HomeScreen = () => {
         Recently Played
       </Text>
 
-      <FlatList 
-        data={recentlyPlayed}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        renderItem={({item, index}) => <RecentlyPlayedCard item={item} key={index}/>}
-      />
+        {!loading ? (
+          <FlatList 
+            data={recentlyPlayed}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            renderItem={({item, index}) => <RecentlyPlayedCard item={item}
+            key={index}/>}
+          />
+        ) : (
+          <View style={{
+            justifyContent: 'center', 
+            alignItems: 'center',
+            marginTop: 27,
+            }}
+          >
+            <ActivityIndicator color={"white"} size={30}/>
+          </View>
+        )}
       </View>
     )
-  }
+  } //25 22
 
   function displayRecentlyPlayedSongs() {
 
     const renderItem =({item}) => {
       return(
         <TouchableOpacity 
-        style={{
+          style={{
           flex: 1, 
           flexDirection: 'row',
           justifyContent: 'space-between',
@@ -272,6 +303,7 @@ const HomeScreen = () => {
     }
 
     return(
+      !loading ? (
             <FlatList
               ListHeaderComponent={LikedSongsNHiphop} 
               data={recentlyPlayed}
@@ -280,6 +312,16 @@ const HomeScreen = () => {
               columnWrapperStyle={{justifyContent: 'space-between'}}
               //ListFooterComponent={TopArtistNDownRecentlyPlayed}
             />
+      ) : (
+        <View style={{
+          justifyContent: 'center', 
+          alignItems: 'center',
+          marginTop: 25,
+          }}
+        >
+          <ActivityIndicator color={"white"} size={22}/>
+        </View>
+      )
     )
   }
   
