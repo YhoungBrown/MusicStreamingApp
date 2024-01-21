@@ -3,6 +3,8 @@ import React from 'react'
 import { AntDesign, Entypo} from '@expo/vector-icons';
 import { useContext } from 'react';
 import { Player } from '../PlayerContext';
+import { Ionicons } from '@expo/vector-icons';
+
 
 const SongItem = ({item, onPress, isPlaying}) => {
     //console.log(item.track)
@@ -46,6 +48,8 @@ const SongItem = ({item, onPress, isPlaying}) => {
         >
             {item?.track?.name}
         </Text>
+
+        <View style={{flexDirection: "row", alignItems: "center"}}>
         <Text
         style={{
             marginTop: 4,
@@ -53,6 +57,11 @@ const SongItem = ({item, onPress, isPlaying}) => {
         }}>
             {item?.track?.artists[0]?.name}
         </Text> 
+
+          {isPlaying && (
+            <Ionicons style={{marginLeft: 70}} name="stats-chart" size={18} color="#3FFF00" />
+          )}
+        </View>
       </View>
 
       <View style={{

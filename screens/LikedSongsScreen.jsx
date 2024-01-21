@@ -89,46 +89,73 @@ const LikedSongsScreen = () => {
 
     const playTrack = async() => {
         if(savedTracks.items.length > 0) {
-            SetCurrentTrack(savedTracks.items[0])
+            const firstTrack = savedTracks.items[0];
+            SetCurrentTrack(firstTrack);
+            value.current = savedTracks.items.indexOf(firstTrack);
         }
 
         await play(savedTracks.items[0])
-     }
+    }
 
-     const play = async(nextTrack) => {
-        console.log(nextTrack)
+    const play = async (nextTrack) => {
+        console.log(nextTrack);
+    
         const preview_url = nextTrack?.track?.preview_url;
-
-        try{
+    
+        try {
             if (currentSound) {
                 await currentSound.stopAsync();
+                await currentSound.unloadAsync();
             }
             await Audio.setAudioModeAsync({
-                //custom required options below
                 playsInSilentModeIOS: true,
                 staysActiveInBackground: false,
                 shouldDuckAndroid: false,
-            })
-
-            const {sound, status} = await Audio.Sound.createAsync(
-                {
-                    uri: preview_url
-                },
-                {
-                    shouldPlay: true, isLooping: false
-                },
-                onPlaybackStatusUpdate,
-            ) 
-            onPlaybackStatusUpdate(status)
+            });
+    
+            const index = savedTracks.items.findIndex(
+                (item) => item.track.id === nextTrack.track.id
+            );
+    
+            console.log(`Index: ${index}`);
+    
+            let sound = currentSound;
+            let status;
+    
+            if (!sound || !sound.isLoaded) {
+                // Only create and load the sound if it's not already loaded
+                const result = await Audio.Sound.createAsync(
+                    {
+                        uri: preview_url,
+                    },
+                    {
+                        shouldPlay: true,
+                        isLooping: false,
+                    },
+                    onPlaybackStatusUpdate
+                );
+                sound = result.sound;
+                status = result.status;
+                
+                await sound.loadAsync();
+            }
+    
+            onPlaybackStatusUpdate(status);
             setCurrentSound(sound);
-            //console.log(`sound ${status}`)
-            setIsPlaying(status.isLoaded)
+            setIsPlaying(status.isLoaded);
             await sound.playAsync();
-        } catch(err) {
-            console.log(err.message)
+    
+            // Set the current value to the index of the current track
+            value.current = index;
+        } catch (err) {
+            return null;
+            //console.error("Error in play function:", err);
         }
-
-     };
+    };
+    
+    
+    
+    
 
      const onPlaybackStatusUpdate = async (status) => {
         console.log(status)
@@ -142,10 +169,10 @@ const LikedSongsScreen = () => {
 
         //play next track as current track finishes "below"
 
-        if(status.didJustFinish === true) {
-            setCurrentSound(null);
-            playNextTrack();
-        }
+        // if(status.didJustFinish === true) {
+        //     setCurrentSound(null);
+        //     playNextTrack();
+        // }
      };
 
      const circleSize = 12;
@@ -185,6 +212,7 @@ const LikedSongsScreen = () => {
                 SetCurrentTrack(nextTrack);
                 await play(nextTrack);
             } else {
+                alert("End of playlist,")
                 console.warn("Invalid track at index:", value.current);
             }
         } else {
@@ -215,11 +243,12 @@ const LikedSongsScreen = () => {
                 SetCurrentTrack(nextTrack);
                 await play(nextTrack);
             } else {
-                console.warn("Invalid track at index:", value.current);
+                alert("No more Previous song")
+                console.log("Invalid track at index:", value.current);
             }
         } else {
             //console.warn("End of playlist, restarting playlist");
-            alert("No more Previous song")
+            alert("No more Previous song!")
             value.current = 0;
             const nextTrack = savedTracks.items[value.current];
             if (nextTrack) {
