@@ -84,25 +84,29 @@ const HomeScreen = () => {
         return;
       }
 
+      //api endpoints
       //https://api.spotify.com/v1/me/top/artists
-      //https://api.spotify.com/v1/me/top/${type}
+      //https://api.spotify.com/v1/me/following?type=artist
 
-      const type = "artists"
+      const type = "artist"
       const response = await axios({
         method: "GET",
-        url: `https://api.spotify.com/v1/me/top/${type}`,
+        url: "https://api.spotify.com/v1/me/following?type=artist",
         headers: {
           Authorization: `Bearer ${accessToken}`
         },
       })
 
-      const myTopArtists = response.data.items;
+      const myTopArtists = response.data.artists.items;
+      //console.log(response);
       setTopArtist(myTopArtists);
 
     } catch (error){
       console.log(error.message)
     }
   }
+
+  //console.log(topArtist.length)
 
 
   useEffect(() => {
@@ -112,7 +116,7 @@ const HomeScreen = () => {
   }, []);
   
   //console.log (recentlyPlayed)
-  //console.log (topArtist)
+  //console.log (topArtist);
 
   
   function LikedSongsNHiphop() {
@@ -185,7 +189,7 @@ const HomeScreen = () => {
         marginTop: 10
         }}
       >
-        Your Top Artists
+        Your Followed Artists
       </Text>
       
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>

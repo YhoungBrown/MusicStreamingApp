@@ -48,7 +48,8 @@ const LoginScreen = () => {
             "playlist-read-private",
             "playlist-read-collaborative",
             "playlist-modify-public",
-            "playlist-modify-private"
+            "playlist-modify-private",
+            "user-follow-read",
           ],
           state: generateRandom(16), //optional (just for extra security)...
           redirectUrl: "exp://192.168.43.92:8081/--/spotify-auth-callback"
