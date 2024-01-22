@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, AntDesign, MaterialCommunityIcons, Entypo,} from '@expo/vector-icons';
 
 const SongInfoScreen = () => {
-    //const route = useRoute();
+    
     const {params} = useRoute();
     const albumUrl = params?.item?.track?.album?.uri
     const [tracks, setTracks] = useState([]);
@@ -16,7 +16,7 @@ const SongInfoScreen = () => {
 
     const navigation = useNavigation();
 
-    console.log(albumId)
+    //console.log(albumId)
 
     const safeAreaTop = { paddingTop: useSafeAreaInsets().top };
     const safeAreaBottom = { paddingBottom: useSafeAreaInsets().bottom };
@@ -44,11 +44,11 @@ const SongInfoScreen = () => {
           }
         };
       
-        // Call the fetchSongs function here
         fetchSongs();
-      }, []);  // Ensure the dependency array is correct
+      }, []);  
       
-console.log(tracks)
+//console.log(tracks)
+
   return (
     <LinearGradient colors={["#040306", "#131624"]} style={{flex: 1}}>
         <ScrollView style={safeAreaTop}>

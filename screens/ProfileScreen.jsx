@@ -2,10 +2,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import axios from 'axios'
 import { LinearGradient } from 'expo-linear-gradient'
 import React, { useEffect, useState } from 'react'
-import { Image, ScrollView, Text, View } from 'react-native'
+import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { Octicons } from '@expo/vector-icons';
+import { CommonActions, useNavigation } from '@react-navigation/native'
+
+
+
 
 const ProfileScreen = () => {
+  const navigation = useNavigation();
   const [userProfile, setUserProfile] = useState([]);
   const [playlist, setPlaylist] = useState([]);
 
@@ -27,6 +33,23 @@ const ProfileScreen = () => {
       console.log(error.message)
     }
   }
+
+  const Logout = async () => {
+    try {
+      // Clearing the access token from AsyncStorage
+      await AsyncStorage.removeItem("token");
+      await AsyncStorage.removeItem("expirationDate");
+  
+  
+      // Redirect to the login screen using React Navigation
+      navigation.dispatch(CommonActions.reset({
+        index: 0,
+        routes: [{ name: 'Login' }], 
+      }));
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
+  };
 
   useEffect(() => {
     getProfile();
@@ -57,13 +80,32 @@ const ProfileScreen = () => {
       colors={["#040306", "#131624"]} 
       style={{flex: 1}}
     >
-      <ScrollView style={safeAreaTop}>
-        <View style={{ padding: 12 }}>
+      <View style={safeAreaTop}>
+
+              {/* Logout */}
+
+          <TouchableOpacity style={{
+            position: 'absolute', 
+            left: 340, 
+            top: 20, 
+            alignItems: 'center'
+            }}
+            onPress={Logout}
+          >
+            <Octicons name="sign-out" size={24} color="white" />
+            <Text style={{color: "gray", fontSize: 8}}>Logout</Text>
+          </TouchableOpacity>
+          
+        <View style={{ padding: 6 }}>
+
+          {/* ProfilePix and Mail */}
+
           <View style={{
-            flexDirection: "row", 
+            //flexDirection: "row", 
             alignItems: "center",
             gap: 10
-          }}>
+            }}
+          >
               <Image source={{uri: userProfile?.images?.[0]?.url}}
                 style={{width: 40, height: 40, borderRadius: 20, resizeMode: 'cover'}}
               />
@@ -87,7 +129,6 @@ const ProfileScreen = () => {
                 </Text>
               </View>
           </View>
-
         </View>
 
             {/* My Playlist */}
@@ -96,12 +137,14 @@ const ProfileScreen = () => {
             fontSize: 20, 
             fontWeight: "500",
             marginHorizontal:12,
+            marginVertical: 5,
+            marginTop: 7,
             }}
           >
             Your Playlists
           </Text>
 
-          <View style={{padding: 15}}>
+          <ScrollView style={{paddingHorizontal: 15}}>
             {playlist.map((item, index) => (
               <View key={index} style={{
                 flexDirection: "row",
@@ -124,8 +167,8 @@ const ProfileScreen = () => {
                 </View>
               </View>
             ))}
-          </View>
-      </ScrollView>
+          </ScrollView>
+      </View>
     </LinearGradient>
   )
 }
