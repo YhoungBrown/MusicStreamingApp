@@ -123,7 +123,7 @@ const HomeScreen = () => {
   }, []);
   
   //console.log (`recently played = ${recentlyPlayed}`)
-  //console.log (topArtist);
+  //console.log (topArtist); 
 
   
   function LikedSongsNHiphop() {
